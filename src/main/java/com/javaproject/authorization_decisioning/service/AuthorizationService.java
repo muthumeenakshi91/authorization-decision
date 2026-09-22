@@ -83,6 +83,15 @@ public class AuthorizationService {
         long processingTime =
                 System.currentTimeMillis() - startTime;
 
+        logger.info(
+                "Authorization decision: transactionId={}, decision={}, amount={}, currency={}, processingTime={}ms",
+                request.getTransactionId(),
+                decision,
+                request.getAmount(),
+                request.getCurrency(),
+                processingTime
+                );
+
         AuthorizationTransaction transaction =
                 new AuthorizationTransaction();
 

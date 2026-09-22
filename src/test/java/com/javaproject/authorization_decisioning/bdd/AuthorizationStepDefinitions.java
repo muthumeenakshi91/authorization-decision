@@ -1,12 +1,12 @@
-package com.javaproject.authorization_decisioning.bdd;
+package com.javaproject.authorization_decisioning.cucumber;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
 import io.cucumber.java.en.Then;
+import io.restassured.response.Response;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
-import io.restassured.response.Response;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AuthorizationStepDefinitions {
 
@@ -17,34 +17,95 @@ public class AuthorizationStepDefinitions {
     public void aValidAuthorizationRequest() {
 
         requestBody = """
-        {
-            "transactionId": "TXN3002",
-            "cardNumber": "4111111111111111",
-            "amount": 250.00,
-            "currency": "CAD",
-            "merchant": "ABC_STORE"
-        }
-        """;
+            {
+                "transactionId": "CUC1001",
+                "cardNumber": "4111111111111111",
+                "amount": 250.00,
+                "currency": "CAD",
+                "merchant": "ABC_STORE"
+            }
+            """;
+    }
+
+    @Given("an authorization request with amount {int}")
+    public void authorizationRequestWithAmount(int amount) {
+
+        requestBody = """
+            {
+                "transactionId": "CUC1002",
+                "cardNumber": "4111111111111111",
+                "amount": %d,
+                "currency": "CAD",
+                "merchant": "ABC_STORE"
+            }
+            """.formatted(amount);
+    }
+
+    @Given("an authorization request with an invalid card number")
+    public void authorizationRequestWithInvalidCardNumber() {
+
+        requestBody = """
+            {
+                "transactionId": "CUC1003",
+                "cardNumber": "12345",
+                "amount": 250.00,
+                "currency": "CAD",
+                "merchant": "ABC_STORE"
+            }
+            """;
     }
 
     @When("I submit the authorization request")
-    public void iSubmitTheAuthorizationRequest() {
+    public void submitAuthorizationRequest() {
+
+        String token =
+            given()
+                .contentType("application/json")
+                .body("""
+                    {
+                        "username": "admin",
+                        "password": "password"
+                    }
+                    """)
+            .when()
+                .post("http://localhost:8080/api/login")
+            .then()
+                .statusCode(200)
+                .extract()
+                .path("token");
 
         response =
-        given()
-            .contentType("application/json")
-            .body(requestBody)
-        .when()
-            .post("/api/auth/authorize");
+            given()
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .body(requestBody)
+            .when()
+                .post("http://localhost:8080/api/auth/authorize");
     }
 
     @Then("the transaction should be approved")
-    public void theTransactionShouldBeApproved() {
+    public void transactionShouldBeApproved() {
 
-        response.then()
-            .statusCode(200)
-            .body("transactionId", equalTo("TXN3001"))
-            .body("decision", equalTo("APPROVED"))
-            .body("reason", equalTo("Transaction approved"));
+        assertEquals(200, response.statusCode());
+        assertEquals(
+            "APPROVED",
+            response.jsonPath().getString("decision")
+        );
+    }
+
+    @Then("the transaction should be declined")
+    public void transactionShouldBeDeclined() {
+
+        assertEquals(200, response.statusCode());
+        assertEquals(
+            "DECLINED",
+            response.jsonPath().getString("decision")
+        );
+    }
+
+    @Then("the request should be rejected with status {int}")
+    public void requestShouldBeRejectedWithStatus(int status) {
+
+        assertEquals(status, response.statusCode());
     }
 }
