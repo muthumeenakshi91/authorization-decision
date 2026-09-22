@@ -28,5 +28,20 @@ jobs:
       - name: Set up Chrome
         uses: browser-actions/setup-chrome@v1
 
+      - name: Start Spring Boot application
+        run: |
+          nohup mvn spring-boot:run > application.log 2>&1 &
+
+      - name: Wait for application
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/ > /dev/null; then
+              echo "Application is running"
+              break
+            fi
+            echo "Waiting for application..."
+            sleep 2
+          done
+
       - name: Run Maven tests
         run: mvn test

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.chrome.ChromeOptions;
 
 import com.javaproject.authorization_decisioning.ui.pages.AuthorizationPage;
 
@@ -24,7 +25,13 @@ class AuthorizationUiTest {
     @BeforeEach
     void setUp() {
 
-        driver = new ChromeDriver();
+        ChromeOptions options = new ChromeOptions();
+
+        options.addArguments("--headless");
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-dev-shm-usage");
+
+        driver = new ChromeDriver(options);
 
         driver.get("http://localhost:8080/");
 
