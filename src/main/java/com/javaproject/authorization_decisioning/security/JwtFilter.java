@@ -16,11 +16,16 @@ import java.util.Collections;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+
+    private static final Logger logger =
+        LoggerFactory.getLogger(JwtFilter.class);
 
     public JwtFilter(JwtService jwtService) {
         this.jwtService = jwtService;
@@ -54,8 +59,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 String role =
                         jwtService.extractRole(token);
 
-                System.out.println("JWT username = " + username);
-                System.out.println("JWT role = " + role);
+                logger.info("JWT authenticated user: {}, role: {}", username, role);
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
@@ -71,35 +75,21 @@ public class JwtFilter extends OncePerRequestFilter {
             SecurityContextHolder
                     .getContext()
                     .setAuthentication(authentication);
-            System.out.println(
-                "Authenticated user = "
-                        + SecurityContextHolder
-                        .getContext()
-                        .getAuthentication()
-                        .getName()
-                );
-
-                System.out.println(
-                "Authorities = "
-                        + SecurityContextHolder
+            logger.debug(
+                "Authorities: {}",
+                SecurityContextHolder
                         .getContext()
                         .getAuthentication()
                         .getAuthorities()
                 );
 
+
         } catch (Exception exception) {
 
-                System.out.println(
-                        "Exception in JwtFilter: "
-                        + exception.getClass().getName()
-                );
-
-                System.out.println(
-                        "Exception message: "
-                        + exception.getMessage()
-                );
-
-                exception.printStackTrace();
+                logger.warn(
+                        "JWT authentication failed: {}",
+                        exception.getMessage()
+                        );
 
                 response.setStatus(
                         HttpServletResponse.SC_UNAUTHORIZED
